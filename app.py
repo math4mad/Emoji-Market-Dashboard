@@ -35,6 +35,22 @@ st.set_page_config(
     page_icon="🌍",
     layout="wide",
     initial_sidebar_state="expanded",
+    menu_items=None,
+)
+
+# Hide the default Streamlit toolbar (the white bar at the very top
+# with "Deploy" / hamburger / fork icons) so our custom dark header
+# sits flush against the viewport top.
+st.markdown(
+    """
+<style>
+[data-testid="stToolbar"]        { display: none !important; }
+[data-testid="stDecoration"]     { display: none !important; }
+#MainMenu                          { display: none !important; }
+header[data-testid="stHeader"]    { display: none !important; }
+</style>
+""",
+    unsafe_allow_html=True,
 )
 
 st.markdown(
@@ -69,7 +85,7 @@ html, body, .stApp {
     color: var(--text) !important;
     font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
 }
-.block-container { padding-top: 1rem; padding-bottom: 1rem; max-width: 100%; }
+.block-container { padding-top: 0.6rem; padding-bottom: 1rem; max-width: 100%; }
 
 /* ========== Top bar ========== */
 .app-header {
