@@ -879,161 +879,70 @@ with c3:
     st.markdown("</div>", unsafe_allow_html=True)
 
 # ──────────────────────────────────────────
-# Second row: Market Network | Intelligence Trend | Event Log
+# Lower full-width row: Edge State Table (Market Network panel removed)
 # ──────────────────────────────────────────
-# ── Lower 2-col row (3:2): Edge State Table | Market Network ──
-r1, r2 = st.columns([3, 2])
-
-with r1:
-    st.markdown(
-        '<div class="panel"><h3>Edge State <span class="hint">点击列头排序</span></h3>',
-        unsafe_allow_html=True,
+st.markdown(
+    '<div class="panel"><h3>Edge State <span class="hint">点击列头排序</span></h3>',
+    unsafe_allow_html=True,
+)
+rows = []
+for u, v, data in state.market.G.edges(data=True):
+    base = state.market.base_rates.get((u, v), data["rate"])
+    rows.append(
+        {
+            "Edge": f"{state.market.G.nodes[u]['emoji']}{u[:3]}→{v[:3]}",
+            "Rate": round(data["rate"], 3),
+            "Dev%": round((data["rate"] / base - 1) * 100, 1),
+            "Vol": round(data["volume"], 1),
+        }
     )
-    rows = []
-    for u, v, data in state.market.G.edges(data=True):
-        base = state.market.base_rates.get((u, v), data["rate"])
-        rows.append(
-            {
-                "Edge": f"{state.market.G.nodes[u]['emoji']}{u[:3]}→{v[:3]}",
-                "Rate": round(data["rate"], 3),
-                "Dev%": round((data["rate"] / base - 1) * 100, 1),
-                "Vol": round(data["volume"], 1),
-            }
-        )
+st.dataframe(
+    pd.DataFrame(rows),
+    use_container_width=True,
+    hide_index=True,
+    height=260,
+)
+st.markdown("</div>", unsafe_allow_html=True)
+
+# ── Bottom full-width row: Event Log (aligned with Edge State, Quick Policy panel removed)
+st.markdown(
+    '<div class="panel"><h3>Event Log <span class="hint">🔴 危机 · 🟢 交易 · 🔵 政策</span></h3>',
+    unsafe_allow_html=True,
+)
+# Build a DataFrame so Event Log uses the same widget & height as Edge State,
+# giving the two panels a consistent visual treatment.
+if state.logs:
+    log_entries = state.logs[-50:]  # keep up to 50 most recent
+    log_df_rows = []
+    for entry in reversed(log_entries):
+        if "CRISIS" in entry:
+            kind, marker = "Crisis", "🔴"
+        elif (
+            "Inject" in entry
+            or "Drain" in entry
+            or "Repaired" in entry
+            or "[CB]" in entry
+        ):
+            kind, marker = "Policy", "🔵"
+        elif "arb" in entry:
+            kind, marker = "Trade", "🟢"
+        else:
+            kind, marker = "System", "⚪"
+        log_df_rows.append({"Kind": f"{marker} {kind}", "Event": entry})
     st.dataframe(
-        pd.DataFrame(rows),
+        pd.DataFrame(log_df_rows),
         use_container_width=True,
         hide_index=True,
         height=260,
     )
-    st.markdown("</div>", unsafe_allow_html=True)
-
-with r2:
-    st.markdown(
-        '<div class="panel"><h3>Market Network <span class="hint">红色=危机边</span></h3>',
-        unsafe_allow_html=True,
+else:
+    st.dataframe(
+        pd.DataFrame([{"Kind": "—", "Event": "No events yet — press Step to begin."}]),
+        use_container_width=True,
+        hide_index=True,
+        height=260,
     )
-    fig_n, ax_n = plt.subplots(figsize=(4.0, 3.6), dpi=110)
-    fig_n.patch.set_facecolor(DARK_BG)
-    ax_n.set_facecolor(DARK_BG)
-    G = state.market.G
-    pos = nx.circular_layout(G)
-    node_colors = []
-    for node in G.nodes():
-        if node in {"Wool", "Wheat", "Iron"}:
-            node_colors.append("#f59e0b")
-        elif node in {"Sheep"}:
-            node_colors.append("#3b82f6")
-        elif node in {"Wine"}:
-            node_colors.append("#10b981")
-        else:
-            node_colors.append("#8b5cf6")
-    edge_widths = [
-        max(0.4, min(2.5, state.market.G[u][v].get("volume", 0) / 50 + 0.4))
-        for u, v in G.edges()
-    ]
-    edge_colors = []
-    for u, v in G.edges():
-        rate = state.market.G[u][v].get("rate", 0)
-        base = state.market.base_rates.get((u, v), rate)
-        dev = (rate / base - 1) if base else 0
-        if dev < -0.2:
-            edge_colors.append("#ef4444")
-        elif dev > 0.2:
-            edge_colors.append("#22c55e")
-        else:
-            edge_colors.append("#94a3b8")
-    nx.draw_networkx_nodes(
-        G, pos, ax=ax_n, node_color=node_colors,
-        node_size=480, alpha=0.95, edgecolors=DARK_FG, linewidths=1.2,
-    )
-    nx.draw_networkx_edges(
-        G, pos, ax=ax_n, edge_color=edge_colors, width=edge_widths,
-        arrows=True, arrowsize=10, alpha=0.65, connectionstyle="arc3,rad=0.12",
-    )
-    labels = {n: d["emoji"] for n, d in G.nodes(data=True)}
-    nx.draw_networkx_labels(G, pos, labels=labels, ax=ax_n, font_size=10, font_color=DARK_FG)
-    ax_n.axis("off")
-    fig_n.tight_layout()
-    st.pyplot(fig_n)
-    st.caption("🔵 Source · 🟡 Mediator · 🟢 Target · 🔴 Crisis edge · ⚪ Stable edge")
-    st.markdown("</div>", unsafe_allow_html=True)
-
-# ── Bottom 2-col row (1:1): Event Log | Quick Policy Controls ──
-b1, b2 = st.columns([1, 1])
-
-with b1:
-    st.markdown(
-        '<div class="panel"><h3>Event Log <span class="hint">🔴 危机 · 🟢 交易 · 🔵 政策</span></h3>',
-        unsafe_allow_html=True,
-    )
-    log_entries = state.logs[-15:] if state.logs else ["No events yet — press Step to begin."]
-    log_html = '<div class="event-log">'
-    for entry in reversed(log_entries):
-        cls = "sys"
-        if "CRISIS" in entry:
-            cls = "crisis"
-        elif "Inject" in entry or "Drain" in entry or "Repaired" in entry or "[CB]" in entry:
-            cls = "policy"
-        elif "arb" in entry:
-            cls = "trade"
-        # Truncate for compactness
-        disp = entry if len(entry) < 90 else entry[:87] + "…"
-        log_html += f'<div class="entry {cls}">{disp}</div>'
-    log_html += "</div>"
-    st.markdown(log_html, unsafe_allow_html=True)
-    st.markdown("</div>", unsafe_allow_html=True)
-
-with b2:
-    st.markdown(
-        '<div class="panel"><h3>Policy Sandbox <span class="hint">央行快捷操作</span></h3>',
-        unsafe_allow_html=True,
-    )
-    p1, p2 = st.columns(2)
-    with p1:
-        cb_target = st.selectbox(
-            "Target Agent", [a.name for a in state.agents], key="cb_target_inline",
-            label_visibility="visible",
-        )
-        cb_amount = st.number_input("Amount", 1, 100_000, 50, key="cb_amount_inline")
-    with p2:
-        st.markdown("<div style='height:28px'></div>", unsafe_allow_html=True)
-        bi1, bi2 = st.columns(2)
-        with bi1:
-            if st.button("💸 Inject", use_container_width=True, key="cb_inject_inline"):
-                agent = next(a for a in state.agents if a.name == cb_target)
-                state.market.inject_liquidity(agent, cb_amount)
-                st.session_state.sim_state.logs.append(
-                    f"[CB] Injected {cb_amount} → {cb_target} | balance {agent.capital:.1f}"
-                )
-                st.rerun()
-        with bi2:
-            if st.button("💵 Drain", use_container_width=True, key="cb_drain_inline"):
-                agent = next(a for a in state.agents if a.name == cb_target)
-                state.market.drain_liquidity(agent, cb_amount)
-                st.session_state.sim_state.logs.append(
-                    f"[CB] Drained {cb_amount} from {cb_target} | balance {agent.capital:.1f}"
-                )
-                st.rerun()
-    # Targeted edge repair
-    edge_list = [f"{u}→{v}" for u, v, _ in state.market.G.edges(data=True)]
-    if edge_list:
-        er1, er2 = st.columns([3, 1])
-        with er1:
-            repair_edge = st.selectbox(
-                "Targeted Repair Edge", edge_list, key="repair_edge_inline",
-                label_visibility="visible",
-            )
-        with er2:
-            st.markdown("<div style='height:28px'></div>", unsafe_allow_html=True)
-            if st.button("🔧 Repair", use_container_width=True, key="repair_btn_inline"):
-                u, v = repair_edge.split("→")
-                if state.market.reset_edge((u, v)):
-                    st.session_state.sim_state.logs.append(
-                        f"[CB] Repaired {u}→{v} to base rate"
-                    )
-                    st.rerun()
-    st.markdown("</div>", unsafe_allow_html=True)
+st.markdown("</div>", unsafe_allow_html=True)
 
 # ── Footer: export + about ──
 st.markdown("---")
