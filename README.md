@@ -60,7 +60,8 @@ requirements.txt        # Python dependencies
 
 ## Companion Project
 
-- **Tutorial Website**: [Emoji-Market-Tutorial](https://github.com/math4mad/Emoji-Market-Tutorial)
+- **Live Tutorial Site**: <https://math4mad.github.io/Emoji-Market-Tutorial/>
+- **Tutorial Source**: [Emoji-Market-Tutorial](https://github.com/math4mad/Emoji-Market-Tutorial)
 - **Original Product**: [Emoji-Market-qwen](https://github.com/math4mad/Emoji-Market-qwen)
 
 ## License

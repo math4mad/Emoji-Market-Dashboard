@@ -805,5 +805,7 @@ with e3:
         "rates=weights, arbitrage=signal propagation."
     )
     st.markdown(
-        "Tutorial: [Emoji Market Tutorial](https://github.com/math4mad/Emoji-Market-Tutorial)"
+        "📖 [Tutorial Website](https://math4mad.github.io/Emoji-Market-Tutorial/) · "
+        "💻 [Source Code](https://github.com/math4mad/Emoji-Market-Dashboard) · "
+        "🌐 [Live App](https://emoji-market-dashboard.streamlit.app)"
     )
