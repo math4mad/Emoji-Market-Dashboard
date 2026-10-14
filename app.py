@@ -879,70 +879,73 @@ with c3:
     st.markdown("</div>", unsafe_allow_html=True)
 
 # ──────────────────────────────────────────
-# Lower full-width row: Edge State Table (Market Network panel removed)
+# Lower 2-col row (1:1): Edge State | Event Log
 # ──────────────────────────────────────────
-st.markdown(
-    '<div class="panel"><h3>Edge State <span class="hint">点击列头排序</span></h3>',
-    unsafe_allow_html=True,
-)
-rows = []
-for u, v, data in state.market.G.edges(data=True):
-    base = state.market.base_rates.get((u, v), data["rate"])
-    rows.append(
-        {
-            "Edge": f"{state.market.G.nodes[u]['emoji']}{u[:3]}→{v[:3]}",
-            "Rate": round(data["rate"], 3),
-            "Dev%": round((data["rate"] / base - 1) * 100, 1),
-            "Vol": round(data["volume"], 1),
-        }
-    )
-st.dataframe(
-    pd.DataFrame(rows),
-    use_container_width=True,
-    hide_index=True,
-    height=260,
-)
-st.markdown("</div>", unsafe_allow_html=True)
+es_col, ev_col = st.columns([1, 1])
 
-# ── Bottom full-width row: Event Log (aligned with Edge State, Quick Policy panel removed)
-st.markdown(
-    '<div class="panel"><h3>Event Log <span class="hint">🔴 危机 · 🟢 交易 · 🔵 政策</span></h3>',
-    unsafe_allow_html=True,
-)
-# Build a DataFrame so Event Log uses the same widget & height as Edge State,
-# giving the two panels a consistent visual treatment.
-if state.logs:
-    log_entries = state.logs[-50:]  # keep up to 50 most recent
-    log_df_rows = []
-    for entry in reversed(log_entries):
-        if "CRISIS" in entry:
-            kind, marker = "Crisis", "🔴"
-        elif (
-            "Inject" in entry
-            or "Drain" in entry
-            or "Repaired" in entry
-            or "[CB]" in entry
-        ):
-            kind, marker = "Policy", "🔵"
-        elif "arb" in entry:
-            kind, marker = "Trade", "🟢"
-        else:
-            kind, marker = "System", "⚪"
-        log_df_rows.append({"Kind": f"{marker} {kind}", "Event": entry})
+with es_col:
+    st.markdown(
+        '<div class="panel"><h3>Edge State <span class="hint">点击列头排序</span></h3>',
+        unsafe_allow_html=True,
+    )
+    rows = []
+    for u, v, data in state.market.G.edges(data=True):
+        base = state.market.base_rates.get((u, v), data["rate"])
+        rows.append(
+            {
+                "Edge": f"{state.market.G.nodes[u]['emoji']}{u[:3]}→{v[:3]}",
+                "Rate": round(data["rate"], 3),
+                "Dev%": round((data["rate"] / base - 1) * 100, 1),
+                "Vol": round(data["volume"], 1),
+            }
+        )
     st.dataframe(
-        pd.DataFrame(log_df_rows),
+        pd.DataFrame(rows),
         use_container_width=True,
         hide_index=True,
         height=260,
     )
-else:
-    st.dataframe(
-        pd.DataFrame([{"Kind": "—", "Event": "No events yet — press Step to begin."}]),
-        use_container_width=True,
-        hide_index=True,
-        height=260,
+    st.markdown("</div>", unsafe_allow_html=True)
+
+with ev_col:
+    st.markdown(
+        '<div class="panel"><h3>Event Log <span class="hint">🔴 危机 · 🟢 交易 · 🔵 政策</span></h3>',
+        unsafe_allow_html=True,
     )
-st.markdown("</div>", unsafe_allow_html=True)
+    # Build a DataFrame so Event Log uses the same widget & height as Edge State,
+    # giving the two panels a consistent visual treatment.
+    if state.logs:
+        log_entries = state.logs[-50:]  # keep up to 50 most recent
+        log_df_rows = []
+        for entry in reversed(log_entries):
+            if "CRISIS" in entry:
+                kind, marker = "Crisis", "🔴"
+            elif (
+                "Inject" in entry
+                or "Drain" in entry
+                or "Repaired" in entry
+                or "[CB]" in entry
+            ):
+                kind, marker = "Policy", "🔵"
+            elif "arb" in entry:
+                kind, marker = "Trade", "🟢"
+            else:
+                kind, marker = "System", "⚪"
+            log_df_rows.append({"Kind": f"{marker} {kind}", "Event": entry})
+        st.dataframe(
+            pd.DataFrame(log_df_rows),
+            use_container_width=True,
+            hide_index=True,
+            height=260,
+        )
+    else:
+        st.dataframe(
+            pd.DataFrame([{"Kind": "—", "Event": "No events yet — press Step to begin."}]),
+            use_container_width=True,
+            hide_index=True,
+            height=260,
+        )
+    st.markdown("</div>", unsafe_allow_html=True)
 
 # ── Footer: export + about ──
 st.markdown("---")
